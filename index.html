@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LEGO Wertfinder</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f4f1e8;margin:0;color:#111}
+main{max-width:700px;margin:auto;padding:24px}
+h1{font-size:38px}
+input,button{font-size:18px;padding:14px;border-radius:10px;border:1px solid #ccc}
+input{width:100%;margin-bottom:10px}
+button{background:#e33b32;color:white;border:0;width:100%;font-weight:bold}
+.card{background:white;padding:20px;border-radius:16px;margin-top:20px}
+img{max-width:100%;max-height:280px}
+a{display:inline-block;margin-top:10px;margin-right:8px;padding:10px 14px;background:#111;color:white;text-decoration:none;border-radius:8px}
+#status{margin-top:10px;color:#666}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>LEGO Wertfinder</h1>
+<p>LEGO Setnummer eingeben.</p>
+
+<input id="set" placeholder="z. B. 10218">
+<button onclick="suche()">Suchen</button>
+
+<div id="status">Katalog wird geladen …</div>
+
+<div id="result" class="card hidden">
+  <img id="bild">
+  <h2 id="name"></h2>
+  <p><b>Setnummer:</b> <span id="nummer"></span></p>
+  <p><b>Jahr:</b> <span id="jahr"></span></p>
+  <p><b>Teile:</b> <span id="teile"></span></p>
+
+  <a id="bricklink" target="_blank">BrickLink</a>
+  <a id="brickeconomy" target="_blank">BrickEconomy</a>
+  <a id="rebrickable" target="_blank">Rebrickable</a>
+</div>
+</main>
+
+<script>
+let sets={};
+
+async function laden(){
+  try{
+    const url="https://cdn.rebrickable.com/media/downloads/sets.csv";
+    const r=await fetch(url);
+    const t=await r.text();
+
+    const lines=t.split("\n");
+    const kopf=parse(lines[0]);
+
+    for(let i=1;i<lines.length;i++){
+      if(!lines[i]) continue;
+      const v=parse(lines[i]);
+      const o={};
+      kopf.forEach((k,j)=>o[k]=v[j]);
+      if(o.set_num) sets[o.set_num.toUpperCase()]=o;
+    }
+
+    document.getElementById("status").textContent=
+      Object.keys(sets).length+" Sets geladen";
+  }catch(e){
+    document.getElementById("status").textContent=
+      "Katalog konnte nicht geladen werden.";
+  }
+}
+
+function parse(line){
+  let a=[],x="",q=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c=='"') q=!q;
+    else if(c==","&&!q){a.push(x);x=""}
+    else x+=c;
+  }
+  a.push(x);
+  return a;
+}
+
+function suche(){
+  let q=document.getElementById("set").value.trim().toUpperCase();
+  if(!q.includes("-")) q=q+"-1";
+
+  let s=sets[q];
+
+  if(!s){
+    alert("Set nicht gefunden");
+    return;
+  }
+
+  document.getElementById("result").classList.remove("hidden");
+  document.getElementById("name").textContent=s.name;
+  document.getElementById("nummer").textContent=s.set_num;
+  document.getElementById("jahr").textContent=s.year;
+  document.getElementById("teile").textContent=s.num_parts;
+  document.getElementById("bild").src=s.img_url;
+
+  let basis=s.set_num.replace(/-\d+$/,"");
+
+  document.getElementById("bricklink").href=
+    "https://www.bricklink.com/v2/catalog/catalogitem.page?S="+s.set_num;
+
+  document.getElementById("brickeconomy").href=
+    "https://www.brickeconomy.com/set/"+basis+"/";
+
+  document.getElementById("rebrickable").href=
+    "https://rebrickable.com/sets/"+s.set_num+"/";
+}
+
+laden();
+</script>
+</body>
+</html>
