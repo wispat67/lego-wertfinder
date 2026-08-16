@@ -46,9 +46,9 @@ let sets={};
 
 async function laden(){
   try{
-    const url="https://cdn.rebrickable.com/media/downloads/sets.csv";
-    const r=await fetch(url);
-    const t=await r.text();
+    const r=await fetch("sets.csv.gz");
+const ds=new DecompressionStream("gzip");
+const t=await new Response(r.body.pipeThrough(ds)).text();
 
     const lines=t.split("\n");
     const kopf=parse(lines[0]);
